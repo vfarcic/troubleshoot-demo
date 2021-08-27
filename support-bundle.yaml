@@ -1,0 +1,28 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: devops-toolkit
+spec:
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+    - logs:
+        selector:
+          - app=api
+        namespace: default
+        limits:
+          maxAge: 720h
+          maxLines: 1000
+    - http:
+        name: healthz
+        get:
+          url: http://api:3000/healthz
+    - exec:
+        name: mysql-version
+        selector:
+          - app=mysql
+        namespace: default
+        command: ["mysql"]
+        args: ["-V"]
+        timeout: 5s
+  analyzers: []
