@@ -4,53 +4,76 @@ metadata:
   name: devops-toolkit
 spec:
   analyzers:
-    - clusterVersion:
-        outcomes:
-          - fail:
-              when: "< 1.19.0"
-              message: The application requires at least Kubernetes 1.20.0
-              uri: https://kubernetes.io
-          - warn:
-              when: "< 1.21.0"
-              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.18.0 or later.
-              uri: https://kubernetes.io
-          - pass:
-              message: Your cluster meets the recommended and required versions of Kubernetes.
-    - distribution:
-        outcomes:
-          - pass:
-              when: "== gke"
-              message: GKE is a supported platform
-          - pass:
-              when: "== aks"
-              message: AKS is a supported platform
-          - pass:
-              when: "== eks"
-              message: EKS is a supported platform
-          - pass:
-              when: "== k3s"
-              message: k3s is a supported platform
-          - fail:
-              when: "== digitalocean"
-              message: Digital Ocean is not a valid Kubernetes platform since it does not support multi-zone clusters.
-          - warn:
-              message: The Kubernetes platform is not valid. Feel free to ignore this message if you are using a local k8s (e.g., k3d, minikube, kind). It does not matter what you're using locally.
-    - nodeResources:
-        checkName: Must have at least 3 nodes in the cluster. Anything less than that is not highly-available.
-        outcomes:
-          - fail:
-              when: "count() < 3"
-              message: This cluster requires at least 3 nodes
-          - pass:
-              message: This cluster has enough nodes.
-    - nodeResources:
-        checkName: One node must have 500 MB RAM and 0.5 CPU Cores
-        filters:
-          allocatableMemory: 1Gi
-          cpuCapacity: "1"
-        outcomes:
-          - fail:
-              when: count() < 1
-              message: Cannot find a node with sufficient memory and cpu
-          - pass:
-              message: Sufficient CPU and memory is available
+  - clusterVersion:
+      outcomes:
+      - fail:
+          when: "< 1.19.0"
+          message: The application requires at least Kubernetes 1.20.0
+          uri: https://kubernetes.io
+      - warn:
+          when: "< 1.21.0"
+          message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.22.0 or later.
+          uri: https://kubernetes.io
+      - pass:
+          message: Your cluster meets the recommended and required versions of Kubernetes.
+  - distribution:
+      outcomes:
+      - pass:
+          when: "== gke"
+          message: GKE is a supported platform
+      - pass:
+          when: "== aks"
+          message: AKS is a supported platform
+      - pass:
+          when: "== eks"
+          message: EKS is a supported platform
+      - pass:
+          when: "== k3s"
+          message: k3s is a supported platform
+      - fail:
+          message: The Kubernetes platform is not valid. Ignore this message if you are using a local k8s (e.g., k3d, minikube, kind). It does not matter what you're using locally.
+  - nodeResources:
+      checkName: Must have at least 3 nodes in the cluster. Anything less than that is not highly-available.
+      outcomes:
+      - fail:
+          when: count() < 3
+          message: This cluster requires at least 3 nodes
+      - pass:
+          message: This cluster has enough nodes.
+  - nodeResources:
+      checkName: A node must have at least 1 GB RAM (allocatable ), preferable 4 GB RAM
+      outcomes:
+      - warn:
+          when: min(memoryAllocatable) <= 4Gi
+          message: Cannot find a node with sufficient memory and cpu
+      - fail:
+          when: min(memoryAllocatable) <= 1Gi
+          message: Cannot find a node with sufficient memory and cpu
+      - pass:
+          message: Sufficient memory is available
+  - nodeResources:
+      checkName: A node must have at least 1 CPU (allocatable), preferably 2 CPU
+      outcomes:
+      - warn:
+          when: sum(cpuAllocatable) < 2
+          message: Cannot find a node with sufficient memory and cpu
+      - fail:
+          when: sum(cpuAllocatable) < 1
+          message: Cannot find a node with sufficient memory and cpu
+      - pass:
+          message: Sufficient memory is available
+  - deploymentStatus:
+      checkName: Check for the minimum number of replicas
+      name: devops-toolkit
+      namespace: production
+      outcomes:
+        - fail:
+            when: "< 1"
+            message: The devops-toolkit deployment does not have any ready replicas.
+        - warn:
+            when: "< 3"
+            message: The devops-toolkit deployment has only a single ready replica.
+        - pass:
+            message: There are multiple replicas of the devops-toolkit deployment ready.
+  - storageClass: {}
+
